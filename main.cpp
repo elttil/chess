@@ -1,70 +1,17 @@
 #include <iostream>
-#include "piece.hpp"
-#include "pawn.hpp"
-#include "rook.hpp"
-#include "bishop.hpp"
-#include "knight.hpp"
-#include "king.hpp"
-#include "queen.hpp"
-
-void apply_fen_notation(const char* fen_string, void *board[64])
-{
-	bool isWhite;
-	int row,col;
-	row = col = 0;
-	for(size_t i = 0;fen_string[i] != 0;i++)
-	{
-		if(fen_string[i] == '/')
-		{
-			col++;
-			row = 0;
-			continue;
-		}
-		if((int)fen_string[i] < 58 && (int)fen_string[i] > 47)
-		{
-			row += (int)(fen_string[i]-'0');
-			continue;
-		}
-		isWhite = true;
-		switch(fen_string[i])
-		{
-			case 'P': isWhite = false;
-			case 'p':
-				board[row+col*8] = new Pawn(isWhite);
-				break;
-			case 'R': isWhite = false;
-			case 'r':
-				board[row+col*8] = new Rook(isWhite);
-				break;
-			case 'B': isWhite = false;
-			case 'b':
-				board[row+col*8] = new Bishop(isWhite);
-				break;
-			case 'N': isWhite = false;
-			case 'n':
-				board[row+col*8] = new Knight(isWhite);
-				break;
-			case 'Q': isWhite = false;
-			case 'q':
-				board[row+col*8] = new Queen(isWhite);
-				break;
-			case 'K': isWhite = false;
-			case 'k':
-				board[row+col*8] = new King(isWhite);
-				break;
-			default:
-				board[row+col*8] = new Piece();
-				break;
-		}
-		row++;
-	}
-}
+#include "game.hpp"
 
 int main(void)
 {
-	sf::RenderWindow window(sf::VideoMode(495, 495), "My window");
+	Game chess;
+	while(chess.is_open())
+	{
+		chess.update_game();
+		chess.update_window();
+	}
+/*	sf::RenderWindow window(sf::VideoMode(495, 495), "My window");
 
-	void *board[64] = { nullptr };
+	void *board[8][8] = { nullptr };
 
 	sf::Texture texture;
 	texture.loadFromFile("back.png");
@@ -72,18 +19,21 @@ int main(void)
 	sf::Sprite background;
 	background.setTexture(texture);
 
-	apply_fen_notation("rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR", board);
-	unsigned int x,y;
+	for(size_t i = 0;i < 8;i++)
+		for(size_t j = 0;j < 8;j++)
+		{
+			if(board[i][j] == nullptr)
+				continue;
+			
+			((Piece*)board[i][j])->setPosition(j*62,i*62);
+		}
 
-	for(size_t i = 0;i < 64;i++)
-	{
-		if(board[i] == nullptr)
-			continue;
-		
-		x = (i%8)*62;
-		y = (i/8)*62;
-		((Piece*)board[i])->setPosition(x,y);
-	}
+	bool moves[8][8] = { false };
+	bool drawMoves = true;
+	sf::Color red(255, 0, 0, 100);
+	sf::RectangleShape box;
+	box.setFillColor(red);
+	box.setSize(sf::Vector2f(62,62));
 
 	while(window.isOpen())
 	{
@@ -94,15 +44,50 @@ int main(void)
 				window.close();
 		}
 
+		if(sf::Mouse::isButtonPressed(sf::Mouse::Button::Left))
+		{
+			bool wasPressed = false;
+			for(size_t i = 0;i < 8;i++)
+				for(size_t j = 0;j < 8;j++)
+				{
+					if(board[i][j] == nullptr)
+						continue;
+
+					if(((Piece*)board[i][j])->contains((sf::Vector2f)sf::Mouse::getPosition(window)))
+					{
+						((Piece*)board[i][j])->getLegalMoves(moves, board, j, i);
+						wasPressed = true;
+						drawMoves = true;
+					}
+				}
+
+			if(!wasPressed)
+			{
+				drawMoves = false;
+			}
+		}
+
 		window.clear();
 		window.draw(background);
-		for(size_t i = 0;i < 64;i++)
-		{
-			if(board[i] == nullptr)
-				continue;
+		for(size_t i = 0;i < 8;i++)
+			for(size_t j = 0;j < 8;j++)
+			{
+				if(board[i][j] == nullptr)
+					continue;
+	
+				((Piece*)board[i][j])->draw(window);
+			}
+		if(drawMoves)
+			for(size_t i = 0;i < 8;i++)
+			for(size_t j = 0;j < 8;j++)
+			{
+				if(moves[i][j] == false)
+					continue;
+				
+				box.setPosition(sf::Vector2f(i*62,j*62));
+				window.draw(box);
+			}
 
-			((Piece*)board[i])->draw(window);
-		}
 		window.display();
-	}
+	}*/
 }
