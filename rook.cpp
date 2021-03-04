@@ -5,13 +5,14 @@
 (moves[y][x] = true)\
 )
 
-Rook::Rook(bool isWhite) : Piece('r')
+Rook::Rook(bool isWhite)
 {
 	type = 'r';
 	texture.loadFromFile("pieces.png", sf::IntRect(320*4, 0+((int)isWhite)*320, 320, 320));
 	texture.setSmooth(true);
 	mainObj.setTexture(texture);
 	mainObj.setScale(sf::Vector2f(0.19375,0.19375));
+	this->isWhite = isWhite;
 }
 
 bool Rook::can_move(int y, int x, Piece* board[8][8], bool *stop = nullptr)

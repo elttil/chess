@@ -1,12 +1,13 @@
 #include "king.hpp"
 
-King::King(bool isWhite) : Piece('k')
+King::King(bool isWhite)
 {
 	type = 'k';
 	texture.loadFromFile("pieces.png", sf::IntRect(0, 0+((int)isWhite)*320, 320, 320));
 	texture.setSmooth(true);
 	mainObj.setTexture(texture);
 	mainObj.setScale(sf::Vector2f(0.19375,0.19375));
+	this->isWhite = isWhite;
 }
 
 bool King::can_move(int y, int x, Piece* board[8][8], bool *stop = nullptr)

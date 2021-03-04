@@ -1,17 +1,18 @@
 #include "bishop.hpp"
 
 #define ADD_MOVE(y,x) (\
-(this->can_move(y, x, board))&&\
+(this->can_move(y, x, board, &stop))&&\
 (moves[y][x] = true)\
 )
 
-Bishop::Bishop(bool isWhite) : Piece('b')
+Bishop::Bishop(bool isWhite)
 {
 	type = 'b';
 	texture.loadFromFile("pieces.png", sf::IntRect(320*2, 0+((int)isWhite)*320, 320, 320));
 	texture.setSmooth(true);
 	mainObj.setTexture(texture);
 	mainObj.setScale(sf::Vector2f(0.19375,0.19375));
+	this->isWhite = isWhite;
 }
 
 bool Bishop::can_move(int y, int x, Piece* board[8][8], bool *stop = nullptr)

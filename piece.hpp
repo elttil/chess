@@ -4,7 +4,7 @@
 class Piece
 {
 public:
-	Piece(char type);
+	Piece();
 	virtual ~Piece() { };
 	char get_type();
 	void draw(sf::RenderWindow&);
