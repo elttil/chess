@@ -6,8 +6,7 @@
 (moves[y][x] = true)\
 )
 
-Piece::Piece()
-	: isWhite(true), 
+Piece::Piece() :
 	mainObj()
 {
 }

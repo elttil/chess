@@ -19,8 +19,22 @@ Game::Game() :
 	box.setFillColor(red);
 	box.setSize(sf::Vector2f(62,62));
 
-	this->apply_fen_notation("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR", board);
+	this->apply_fen_notation("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", board);
 	this->update_pieces();
+}
+
+Game::~Game()
+{
+	for(size_t i = 0;i < 8;i++)
+		for(size_t j = 0;j < 8;j++)
+		{
+			if(board[i][j] == nullptr)
+				continue;
+
+			delete (Piece*)(board[i][j]);
+		}
+
+	printf("RUNNING\n");
 }
 
 void Game::apply_fen_notation(const char* fen_string, void *board[8][8])
@@ -41,31 +55,39 @@ void Game::apply_fen_notation(const char* fen_string, void *board[8][8])
 			continue;
 		}
 
+		if(i > 0)
+			if(fen_string[i-1] == ' ')
+			{
+				whites_turn = (fen_string[i] == 'w');
+				continue;
+			}
 
-		bool isWhite = true;
+
+
+		bool isWhite = false;
 		switch(fen_string[i])
 		{
-			case 'P': isWhite = false;
+			case 'P': isWhite = true;
 			case 'p':
 				board[col][row] = new Pawn(isWhite);
 				break;
-			case 'R': isWhite = false;
+			case 'R': isWhite = true;
 			case 'r':
 				board[col][row] = new Rook(isWhite);
 				break;
-			case 'B': isWhite = false;
+			case 'B': isWhite = true;
 			case 'b':
 				board[col][row] = new Bishop(isWhite);
 				break;
-			case 'N': isWhite = false;
+			case 'N': isWhite = true;
 			case 'n':
 				board[col][row] = new Knight(isWhite);
 				break;
-			case 'Q': isWhite = false;
+			case 'Q': isWhite = true;
 			case 'q':
 				board[col][row] = new Queen(isWhite);
 				break;
-			case 'K': isWhite = false;
+			case 'K': isWhite = true;
 			case 'k':
 				board[col][row] = new King(isWhite);
 				break;
@@ -101,7 +123,16 @@ void Game::update_game()
 							break;
 						}
 
+				if(board[boardPosition.y][boardPosition.x] != nullptr)
+				{
+					// This indicates that the new movment captures
+					// a piece and therefore we have to free that
+					// pieces memory.
+					delete (Piece*)board[boardPosition.y][boardPosition.x];
+				}
+
 				board[boardPosition.y][boardPosition.x] = selectedPiece;
+				whites_turn = !whites_turn;
 			}
 
 			update_pieces();
@@ -118,6 +149,15 @@ void Game::update_game()
 				if(((Piece*)board[i][j])->contains((sf::Vector2f)sf::Mouse::getPosition(window)))
 				{
 					selectedPiece = (Piece*)board[i][j];
+					if(selectedPiece->is_white() == whites_turn)
+					{
+						selectedPiece = nullptr;
+						break;
+					}
+
+					for(size_t i = 0;i < 8;i++)
+						for(size_t j = 0;j < 8;j++)
+							moves[i][j] = { false };
 					selectedPiece->get_legal_moves(moves, (Piece*(*)[8])board, j, i);
 					wasPressed = true;
 				}
@@ -155,8 +195,6 @@ void Game::update_window()
 			((Piece*)board[i][j])->draw(window);
 		}
 
-	/* DRAW MOVES
-	 * TODO: Make this a seperate funciton */
 	if(selectedPiece)
 		for(size_t i = 0;i < 8;i++)
 			for(size_t j = 0;j < 8;j++)

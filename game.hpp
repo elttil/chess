@@ -6,6 +6,7 @@ class Game
 {
 public:
 	Game();
+	~Game();
 	void update_game();
 	void update_window();
 	void update_pieces();
@@ -19,5 +20,6 @@ private:
 	sf::Event evnt;
 	sf::RenderWindow window;
 	sf::Texture backTexture;
-	Piece *selectedPiece;
+	Piece *selectedPiece = nullptr;
+	bool whites_turn;
 };
