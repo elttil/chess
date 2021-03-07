@@ -11,7 +11,7 @@ public:
 	void setPosition(float,float);
 	bool contains(sf::Vector2f);
 	bool is_white();
-	virtual bool can_move(int, int, Piece*[8][8], bool*) = 0;
+	bool can_move(int, int, Piece*[8][8], bool* = nullptr);
 	virtual void get_legal_moves(bool[8][8], Piece*[8][8], unsigned short, unsigned short) = 0;
 protected:
 	char type;

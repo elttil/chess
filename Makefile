@@ -1,7 +1,7 @@
 CC=g++
 ODIR=obj
 LIBS=-lsfml-graphics -lsfml-window -lsfml-system
-CPPFLAGS=-Wall -Werror -pedantic -g
+CPPFLAGS=-Wall -Werror -pedantic -Ofast
 
 SRC := $(wildcard *.cpp)
 OBJ := king.o pawn.o game.o rook.o knight.o bishop.o piece.o queen.o main.o

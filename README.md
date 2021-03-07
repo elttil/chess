@@ -6,7 +6,7 @@ play against others.
 # TODO
 - [x] Add the ability to place chess piecies using FEN notation.
 - [x] Add basic chess movment.
-- [ ] Add checking and check mate.
+- [x] Add checking and checkmate.
 - [ ] Implement more "obscure" chess movment(en pasant, castling)
 - [ ] Create a server for the game to communicate with so you
 can play against others.

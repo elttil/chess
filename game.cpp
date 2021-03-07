@@ -19,7 +19,7 @@ Game::Game() :
 	box.setFillColor(red);
 	box.setSize(sf::Vector2f(62,62));
 
-	this->apply_fen_notation("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", board);
+	this->apply_fen_notation("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR", board);
 	this->update_pieces();
 }
 
@@ -33,8 +33,6 @@ Game::~Game()
 
 			delete (Piece*)(board[i][j]);
 		}
-
-	printf("RUNNING\n");
 }
 
 void Game::apply_fen_notation(const char* fen_string, void *board[8][8])
@@ -90,10 +88,82 @@ void Game::apply_fen_notation(const char* fen_string, void *board[8][8])
 			case 'K': isWhite = true;
 			case 'k':
 				board[col][row] = new King(isWhite);
+				king_position[!isWhite].y = col;
+				king_position[!isWhite].x = row;
 				break;
 		}
 		row++;
 	}
+}
+
+bool Game::is_in_check(bool white, Piece*board[8][8])
+{
+	for(size_t i = 0;i < 8;i++)
+		for(size_t j = 0;j < 8;j++)
+		{
+			if(board[i][j] == nullptr)
+				continue;
+
+			if(((Piece*)board[i][j])->is_white() == white)
+				continue;
+			
+			bool possible_moves[8][8] = { false };
+			((Piece*)board[i][j])->get_legal_moves(possible_moves, board, j, i);
+			if(possible_moves[king_position[!white].y][king_position[!white].x] == true)
+				return true;
+		}
+
+	return false;
+}
+
+bool Game::is_in_check_mate(bool white, Piece*board[8][8])
+{
+	Piece* potential_board[8][8];
+	for(size_t a = 0;a < 8;a++)
+		for(size_t b = 0;b < 8;b++)
+		{
+			potential_board[a][b] = (Piece*)board[a][b];
+		}
+	for(size_t i = 0;i < 8;i++)
+		for(size_t j = 0;j < 8;j++)
+		{
+			if(potential_board[i][j] == nullptr)
+				continue;
+
+			if(((Piece*)potential_board[i][j])->is_white() != white)
+				continue;
+			
+			bool possible_moves[8][8] = { false };
+			((Piece*)potential_board[i][j])->get_legal_moves(possible_moves, potential_board, j, i);
+			for(size_t a = 0;a < 8;a++)
+				for(size_t b = 0;b < 8;b++)
+				{
+					if(!possible_moves[a][b]) continue;
+
+					potential_board[a][b] = board[i][j];
+					potential_board[i][j] = nullptr;
+
+					sf::Vector2i tmp_king_position = king_position[!white];
+					if(((Piece*)board[i][j])->get_type() == 'k')
+					{
+						king_position[!white].x = b;
+						king_position[!white].y = a;
+					}
+
+					if(!this->is_in_check(white, potential_board))
+					{
+						king_position[!white] = tmp_king_position;
+						return false;
+					}
+
+					king_position[!white] = tmp_king_position;
+
+					potential_board[i][j] = board[i][j];
+					potential_board[a][b] = (Piece*)board[a][b];
+				}
+		}
+
+	return true;
 }
 
 void Game::update_game()
@@ -102,6 +172,17 @@ void Game::update_game()
 	{
 		if(evnt.type == sf::Event::Closed)
 			window.close();
+	}
+
+	if(winner != 0)
+	{
+		if(winner == 1)
+			puts("WHITE WON");
+		else
+			puts("BLACK WON");
+		
+		window.close();
+		return;
 	}
 
 	if(sf::Mouse::isButtonPressed(sf::Mouse::Button::Left))
@@ -131,8 +212,19 @@ void Game::update_game()
 					delete (Piece*)board[boardPosition.y][boardPosition.x];
 				}
 
+				if(selectedPiece->get_type() == 'k')
+				{
+					king_position[!selectedPiece->is_white()].x = boardPosition.x;
+					king_position[!selectedPiece->is_white()].y = boardPosition.y;
+				}
+
 				board[boardPosition.y][boardPosition.x] = selectedPiece;
 				whites_turn = !whites_turn;
+				if(this->is_in_check_mate(true, (Piece*(*)[8])board))
+					this->winner = 2;
+
+				if(this->is_in_check_mate(false, (Piece*(*)[8])board))
+					this->winner = 1;
 			}
 
 			update_pieces();
@@ -146,27 +238,58 @@ void Game::update_game()
 				if(board[i][j] == nullptr)
 					continue;
 
-				if(((Piece*)board[i][j])->contains((sf::Vector2f)sf::Mouse::getPosition(window)))
+				if(!((Piece*)board[i][j])->contains((sf::Vector2f)sf::Mouse::getPosition(window)))
+					continue;
+
+				wasPressed = true;
+				selectedPiece = (Piece*)board[i][j];
+				if(selectedPiece->is_white() == whites_turn)
 				{
-					selectedPiece = (Piece*)board[i][j];
-					if(selectedPiece->is_white() == whites_turn)
+					selectedPiece = nullptr;
+					break;
+				}
+
+				for(size_t a = 0;a < 8;a++)
+					for(size_t b = 0;b < 8;b++)
+						moves[a][b] = { false };
+
+				selectedPiece->get_legal_moves(moves, (Piece*(*)[8])board, j, i);
+
+				// Determine whether the move may result in a check
+				// for the player
+				Piece* potential_board[8][8];
+				for(size_t a = 0;a < 8;a++)
+					for(size_t b = 0;b < 8;b++)
 					{
-						selectedPiece = nullptr;
-						break;
+						potential_board[a][b] = (Piece*)board[a][b];
 					}
 
-					for(size_t i = 0;i < 8;i++)
-						for(size_t j = 0;j < 8;j++)
-							moves[i][j] = { false };
-					selectedPiece->get_legal_moves(moves, (Piece*(*)[8])board, j, i);
-					wasPressed = true;
-				}
+				for(size_t a = 0;a < 8;a++)
+					for(size_t b = 0;b < 8;b++)
+					{
+						if(moves[a][b] == false) continue;
+						potential_board[a][b] = selectedPiece;
+						potential_board[i][j] = nullptr;
+
+						const sf::Vector2i tmp_king_position = king_position[!selectedPiece->is_white()];
+						if(selectedPiece->get_type() == 'k')
+						{
+							king_position[!selectedPiece->is_white()].x = b;
+							king_position[!selectedPiece->is_white()].y = a;
+						}
+
+						if(this->is_in_check(selectedPiece->is_white(), potential_board))
+							moves[a][b] = false;
+
+						king_position[!selectedPiece->is_white()] = tmp_king_position;
+
+						potential_board[i][j] = selectedPiece;
+						potential_board[a][b] = (Piece*)board[a][b];
+					}
 			}
 		}
-
 		if(!wasPressed)
 			selectedPiece = nullptr;
-
 	}
 }
 

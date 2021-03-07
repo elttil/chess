@@ -15,34 +15,6 @@ Bishop::Bishop(bool isWhite)
 	this->isWhite = isWhite;
 }
 
-bool Bishop::can_move(int y, int x, Piece* board[8][8], bool *stop = nullptr)
-{ 
-	if(x < 0 || x >= 8)
-		return false;
-
-	if(y < 0 || y >= 8)
-		return false;
-
-	if(board[y][x] != nullptr)
-	{
-		if((board[y][x])->is_white() != this->is_white())
-		{
-			if(stop != nullptr)
-				*stop = true;
-			return true;
-		}
-		else if(stop != nullptr)
-		{
-			*stop = true;
-		}
-	}
-
-	if(board[y][x] == nullptr)
-		return true;
-
-	return false;
-}
-
 void Bishop::get_legal_moves(bool moves[8][8], Piece* board[8][8], unsigned short x, unsigned short y)
 {
 	bool stop = false;
