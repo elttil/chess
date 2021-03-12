@@ -10,7 +10,8 @@
 Game::Game() :
 	board { nullptr },
 	moves { false },
-	window(sf::VideoMode(495, 495), "My window")
+	window(sf::VideoMode(495, 495), "My window"),
+	whites_turn ( true )
 {
 	backTexture.loadFromFile("back.png");
 	background.setTexture(backTexture);
@@ -52,15 +53,6 @@ void Game::apply_fen_notation(const char* fen_string, void *board[8][8])
 			row += (int)(fen_string[i]-'0');
 			continue;
 		}
-
-		if(i > 0)
-			if(fen_string[i-1] == ' ')
-			{
-				whites_turn = (fen_string[i] == 'w');
-				continue;
-			}
-
-
 
 		bool isWhite = false;
 		switch(fen_string[i])
@@ -139,12 +131,15 @@ bool Game::is_in_check_mate(bool white, Piece*board[8][8])
 				for(size_t b = 0;b < 8;b++)
 				{
 					if(!possible_moves[a][b]) continue;
+					if(board[i][j] == nullptr)
+						continue;
 
 					potential_board[a][b] = board[i][j];
 					potential_board[i][j] = nullptr;
 
 					sf::Vector2i tmp_king_position = king_position[!white];
-					if(((Piece*)board[i][j])->get_type() == 'k')
+
+					if(potential_board[a][b]->get_type() == 'k')
 					{
 						king_position[!white].x = b;
 						king_position[!white].y = a;
@@ -214,11 +209,56 @@ void Game::update_game()
 
 				if(selectedPiece->get_type() == 'k')
 				{
+					//If we castelled we also need to move the rook.
+				
+					//First we check whether we castled
+					if(abs((int)king_position[!selectedPiece->is_white()].x - boardPosition.x) != 2)
+						goto out3;
+					
+					//If we got to this part it means that we have castelled
+					//so we will now move the rook.
+					if(boardPosition.x == 7)
+					{
+						//We castled king side
+						board[boardPosition.y][5] = board[boardPosition.y][7];
+						board[boardPosition.y][7] = nullptr;
+					}
+					else
+					{
+						//We castled queen side
+						board[boardPosition.y][3] = board[boardPosition.y][0];
+						board[boardPosition.y][0] = nullptr;
+					}
+
+out3:
 					king_position[!selectedPiece->is_white()].x = boardPosition.x;
 					king_position[!selectedPiece->is_white()].y = boardPosition.y;
 				}
 
+				if(selectedPiece->get_type() == 'p')
+				{
+					if(!selectedPiece->has_moved())
+						if(boardPosition.y == 3 || boardPosition.y == 4)
+							((Pawn*)selectedPiece)->set_double_move(true);
+
+					if(board[boardPosition.y][boardPosition.x] == nullptr)
+					{
+						if(selectedPiece->is_white())
+						{
+							delete (Piece*)board[boardPosition.y+1][boardPosition.x];
+							board[boardPosition.y+1][boardPosition.x] = nullptr;
+						}
+						else
+						{
+							delete (Piece*)board[boardPosition.y-1][boardPosition.x];
+							board[boardPosition.y-1][boardPosition.x] = nullptr;
+						}
+					}
+				}
+
 				board[boardPosition.y][boardPosition.x] = selectedPiece;
+				selectedPiece->set_has_moved(true);
+
 				whites_turn = !whites_turn;
 				if(this->is_in_check_mate(true, (Piece*(*)[8])board))
 					this->winner = 2;
@@ -243,7 +283,7 @@ void Game::update_game()
 
 				wasPressed = true;
 				selectedPiece = (Piece*)board[i][j];
-				if(selectedPiece->is_white() == whites_turn)
+				if(selectedPiece->is_white() != whites_turn)
 				{
 					selectedPiece = nullptr;
 					break;
@@ -255,8 +295,28 @@ void Game::update_game()
 
 				selectedPiece->get_legal_moves(moves, (Piece*(*)[8])board, j, i);
 
-				// Determine whether the move may result in a check
-				// for the player
+				//We can not castle out of a check therefore
+				//if we are in check and have gotten the moves to 
+				//castle we must disable those moves
+				if(selectedPiece->get_type() == 'k')
+				{
+					sf::Vector2i position;
+					position = king_position[!selectedPiece->is_white()];
+
+					if(position.x == 4)	
+						if(moves[position.y][position.x+2] == true ||
+						   moves[position.y][position.x-2] == true)
+						{
+							if(is_in_check(selectedPiece->is_white(),(Piece*(*)[8])board))
+							{
+								moves[position.y][position.x+2] = false;
+								moves[position.y][position.x-2] = false;
+							}
+						}
+				}
+
+				//Determine whether the move may result in a check
+				//for the player
 				Piece* potential_board[8][8];
 				for(size_t a = 0;a < 8;a++)
 					for(size_t b = 0;b < 8;b++)
@@ -274,6 +334,23 @@ void Game::update_game()
 						const sf::Vector2i tmp_king_position = king_position[!selectedPiece->is_white()];
 						if(selectedPiece->get_type() == 'k')
 						{
+							//If we castelled we also need to move the rook.
+						
+							//First we check whether we castled
+							if(abs((int)king_position[!selectedPiece->is_white()].x - (int)b) != 2)
+								goto out2;
+
+							//If we got to this part it means that we have castelled
+							//so we will now move the rook.
+							if(b == 7)
+								//We castled king side
+								potential_board[a][5] = (Piece*)board[a][b];
+							else
+								//We castled queen side
+								potential_board[a][3] = (Piece*)board[a][b];
+
+							potential_board[a][b] = nullptr;
+out2:
 							king_position[!selectedPiece->is_white()].x = b;
 							king_position[!selectedPiece->is_white()].y = a;
 						}
@@ -282,6 +359,22 @@ void Game::update_game()
 							moves[a][b] = false;
 
 						king_position[!selectedPiece->is_white()] = tmp_king_position;
+						if(selectedPiece->get_type() == 'p')
+						{
+							if(board[i][j] == nullptr)
+							{
+								if(selectedPiece->is_white())
+								{
+									delete (Piece*)board[i+1][j];
+									board[i+1][j] = nullptr;
+								}
+								else
+								{
+									delete (Piece*)board[i-1][j];
+									board[i-1][j] = nullptr;
+								}
+							}
+						}
 
 						potential_board[i][j] = selectedPiece;
 						potential_board[a][b] = (Piece*)board[a][b];

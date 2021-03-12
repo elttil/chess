@@ -11,11 +11,14 @@ public:
 	void setPosition(float,float);
 	bool contains(sf::Vector2f);
 	bool is_white();
+	bool has_moved();
+	void set_has_moved(bool);
 	bool can_move(int, int, Piece*[8][8], bool* = nullptr);
 	virtual void get_legal_moves(bool[8][8], Piece*[8][8], unsigned short, unsigned short) = 0;
 protected:
 	char type;
 	bool isWhite;
+	bool hasMoved;
 	sf::Sprite mainObj;
 	sf::Texture texture;
 };

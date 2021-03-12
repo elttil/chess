@@ -7,8 +7,19 @@
 )
 
 Piece::Piece() :
+	hasMoved(false),
 	mainObj()
 {
+}
+
+bool Piece::has_moved()
+{
+	return hasMoved;
+}
+
+void Piece::set_has_moved(bool arg)
+{
+	hasMoved = arg;
 }
 
 void Piece::draw(sf::RenderWindow& window)
