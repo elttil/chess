@@ -7,12 +7,51 @@
 #include "king.hpp"
 #include <iostream>
 
-Game::Game() :
+Game::Game(bool arg) :
 	board { nullptr },
 	moves { false },
 	window(sf::VideoMode(495, 495), "My window"),
-	whites_turn ( true )
+	whites_turn ( true ),
+	sock(0),
+	update_clock(Clock::now()),
+	selectedPiece(nullptr)
 {
+	/////////////////////////////
+    struct sockaddr_in serv_addr;
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) 
+    { 
+		perror("socket");
+		exit(1);
+    } 
+   
+    serv_addr.sin_family = AF_INET; 
+    serv_addr.sin_port = htons(7331); 
+       
+    // Convert IPv4 and IPv6 addresses from text to binary form 
+    if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)<=0)  
+    { 
+		perror("inet_pton");
+        exit(1);
+    } 
+   
+    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) 
+    { 
+		perror("connect");
+        exit(1);
+    } 
+
+	char entry[] = "c123456789";
+
+	if(arg) entry[0] = 'j';
+	whites_turn = !arg;
+
+    send(sock, entry, sizeof(entry), 0); 
+
+	unsigned char output[4096];
+	recv(sock, output, sizeof(output), 0);
+	printf("\noutput: %s\n", output);
+	/////////////////////////////
+
 	backTexture.loadFromFile("back.png");
 	background.setTexture(backTexture);
 
@@ -33,6 +72,7 @@ Game::~Game()
 				continue;
 
 			delete (Piece*)(board[i][j]);
+			board[i][j] = nullptr;
 		}
 }
 
@@ -161,12 +201,155 @@ bool Game::is_in_check_mate(bool white, Piece*board[8][8])
 	return true;
 }
 
+void Game::move_selectedpiece(sf::Vector2i dst)
+{
+	if(board[dst.y][dst.x] != nullptr)
+	{
+		// This indicates that the new movment captures
+		// a piece and therefore we have to free that
+		// pieces memory.
+		delete (Piece*)board[dst.y][dst.x];
+		board[dst.y][dst.x] = nullptr;
+	}
+
+	if(selectedPiece->get_type() == 'k')
+	{
+		//If we castelled we also need to move the rook.
+	
+		//First we check whether we castled
+		if(abs((int)king_position[!selectedPiece->is_white()].x - dst.x) != 2)
+			goto out3;
+		
+		//If we got to this part it means that we have castelled
+		//so we will now move the rook.
+		if(dst.x == 7)
+		{
+			//We castled king side
+			board[dst.y][5] = board[dst.y][7];
+			board[dst.y][7] = nullptr;
+		}
+		else
+		{
+			//We castled queen side
+			board[dst.y][3] = board[dst.y][0];
+			board[dst.y][0] = nullptr;
+		}
+
+out3:
+		king_position[!selectedPiece->is_white()].x = dst.x;
+		king_position[!selectedPiece->is_white()].y = dst.y;
+	}
+
+	if(selectedPiece->get_type() == 'p')
+	{
+		if(!selectedPiece->has_moved())
+			if(dst.y == 3 || dst.y == 4)
+				((Pawn*)selectedPiece)->set_double_move(true);
+
+/*					if(board[dst.y][dst.x] == nullptr)
+		{
+			if(selectedPiece->is_white())
+			{
+				delete (Piece*)board[dst.y+1][dst.x];
+				board[dst.y+1][dst.x] = nullptr;
+			}
+			else
+			{
+				delete (Piece*)board[dst.y-1][dst.x];
+				board[dst.y-1][dst.x] = nullptr;
+			}
+		}*/
+	}
+
+	////////
+	char move[4];
+
+	for(unsigned short i = 0;i < 8;i++)
+		for(unsigned short j = 0;j < 8;j++)
+			if(board[i][j] == selectedPiece)
+			{
+				//src
+				move[0] = j + '0';
+				move[1] = i + '0';
+				goto out4;
+			}
+out4:
+
+	//dst
+	move[2] = dst.x + '0';
+	move[3] = dst.y + '0';
+
+	send(sock, move, sizeof(move), 0);
+	std::cout << "Data sent" << std::endl;
+	///////
+
+
+	for(size_t i = 0;i < 8;i++)
+		for(size_t j = 0;j < 8;j++)
+			if(board[i][j] == selectedPiece)
+			{
+				board[i][j] = nullptr;
+				break;
+			}
+
+	board[dst.y][dst.x] = selectedPiece;
+	selectedPiece->set_has_moved(true);
+
+	whites_turn = !whites_turn;
+	if(this->is_in_check_mate(true, (Piece*(*)[8])board))
+		this->winner = 2;
+
+	if(this->is_in_check_mate(false, (Piece*(*)[8])board))
+		this->winner = 1;
+
+}
+
 void Game::update_game()
 {
 	while(window.pollEvent(evnt))
 	{
 		if(evnt.type == sf::Event::Closed)
 			window.close();
+	}
+
+	if(!whites_turn)
+	{	
+		if(std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - update_clock).count() < 100)
+			return;
+
+		update_clock = Clock::now();
+		char move[5];
+		int status;
+		if((status = recv(sock, &move, sizeof(move), 0)) == 0) return;
+		if(status == -1) return;
+
+		if(move[0] < '0' || move[0] > '8' ||
+		   move[1] < '0' || move[1] > '8' ||
+		   move[2] < '0' || move[2] > '8' ||
+		   move[3] < '0' || move[3] > '8')
+			return;
+	
+		
+		sf::Vector2i piece_position;
+		piece_position.x = move[0] - '0';
+		piece_position.y = move[1] - '0';
+
+		sf::Vector2i destination;
+		destination.x = move[2] - '0';
+		destination.y = move[3] - '0';
+
+		std::cout << "piece_position: " << move[0] << " " << move[1] << std::endl;
+
+		selectedPiece = (Piece*)board[piece_position.y][piece_position.x];
+		if(selectedPiece == nullptr)
+		{
+			std::cout << "selectedPiece was a nullptr at " << piece_position.x << " " << piece_position.y << std::endl;
+			return;
+		}
+		move_selectedpiece(destination);
+		update_pieces();
+		selectedPiece = nullptr;
+		return;
 	}
 
 	if(winner != 0)
@@ -191,83 +374,9 @@ void Game::update_game()
 			boardPosition.y /= 62.5;
 			if(moves[boardPosition.y][boardPosition.x] == true)
 			{
-				for(size_t i = 0;i < 8;i++)
-					for(size_t j = 0;j < 8;j++)
-						if(board[i][j] == selectedPiece)
-						{
-							board[i][j] = nullptr;
-							break;
-						}
-
-				if(board[boardPosition.y][boardPosition.x] != nullptr)
-				{
-					// This indicates that the new movment captures
-					// a piece and therefore we have to free that
-					// pieces memory.
-					delete (Piece*)board[boardPosition.y][boardPosition.x];
-				}
-
-				if(selectedPiece->get_type() == 'k')
-				{
-					//If we castelled we also need to move the rook.
-				
-					//First we check whether we castled
-					if(abs((int)king_position[!selectedPiece->is_white()].x - boardPosition.x) != 2)
-						goto out3;
-					
-					//If we got to this part it means that we have castelled
-					//so we will now move the rook.
-					if(boardPosition.x == 7)
-					{
-						//We castled king side
-						board[boardPosition.y][5] = board[boardPosition.y][7];
-						board[boardPosition.y][7] = nullptr;
-					}
-					else
-					{
-						//We castled queen side
-						board[boardPosition.y][3] = board[boardPosition.y][0];
-						board[boardPosition.y][0] = nullptr;
-					}
-
-out3:
-					king_position[!selectedPiece->is_white()].x = boardPosition.x;
-					king_position[!selectedPiece->is_white()].y = boardPosition.y;
-				}
-
-				if(selectedPiece->get_type() == 'p')
-				{
-					if(!selectedPiece->has_moved())
-						if(boardPosition.y == 3 || boardPosition.y == 4)
-							((Pawn*)selectedPiece)->set_double_move(true);
-
-					if(board[boardPosition.y][boardPosition.x] == nullptr)
-					{
-						if(selectedPiece->is_white())
-						{
-							delete (Piece*)board[boardPosition.y+1][boardPosition.x];
-							board[boardPosition.y+1][boardPosition.x] = nullptr;
-						}
-						else
-						{
-							delete (Piece*)board[boardPosition.y-1][boardPosition.x];
-							board[boardPosition.y-1][boardPosition.x] = nullptr;
-						}
-					}
-				}
-
-				board[boardPosition.y][boardPosition.x] = selectedPiece;
-				selectedPiece->set_has_moved(true);
-
-				whites_turn = !whites_turn;
-				if(this->is_in_check_mate(true, (Piece*(*)[8])board))
-					this->winner = 2;
-
-				if(this->is_in_check_mate(false, (Piece*(*)[8])board))
-					this->winner = 1;
+				move_selectedpiece(boardPosition);
+				update_pieces();
 			}
-
-			update_pieces();
 		}
 
 		bool wasPressed = false;

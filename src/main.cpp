@@ -1,9 +1,9 @@
 #include <iostream>
 #include "game.hpp"
 
-int main(void)
+int main(int argc, char **argv)
 {
-	Game chess;
+	Game chess(argc >= 2);
 	while(chess.is_open())
 	{
 		chess.update_game();

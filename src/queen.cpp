@@ -1,4 +1,5 @@
 #include "queen.hpp"
+#include <SFML/Graphics.hpp>
 
 #define ADD_MOVE(y,x) (\
 (this->can_move(y, x, board, &stop))&&\
