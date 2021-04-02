@@ -2,7 +2,7 @@
 
 #define ADD_MOVE(y,x) (\
 (this->can_move(y, x, board, &stop))&&\
-(moves[y][x] = true)\
+((*moves)[y][x] = true)\
 )
 
 Bishop::Bishop(bool isWhite)
@@ -15,7 +15,7 @@ Bishop::Bishop(bool isWhite)
 	this->isWhite = isWhite;
 }
 
-void Bishop::get_legal_moves(bool moves[8][8], Piece* board[8][8], unsigned short x, unsigned short y)
+void Bishop::get_legal_moves(std::vector<std::vector<bool>>* moves, std::vector<std::vector<Piece*>> board, unsigned short x, unsigned short y)
 {
 	bool stop = false;
 

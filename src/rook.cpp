@@ -2,7 +2,7 @@
 
 #define ADD_MOVE(y,x) (\
 (this->can_move(y, x, board, &stop))&&\
-(moves[y][x] = true)\
+((*moves)[y][x] = true)\
 )
 
 Rook::Rook(bool isWhite) 
@@ -15,25 +15,25 @@ Rook::Rook(bool isWhite)
 	this->isWhite = isWhite;
 }
 
-void Rook::get_legal_moves(bool moves[8][8], Piece* board[8][8], unsigned short x, unsigned short y)
+void Rook::get_legal_moves(std::vector<std::vector<bool>>* moves, std::vector<std::vector<Piece*>> board, unsigned short x, unsigned short y)
 {
 	bool stop = false;
 
-	for(int i = x+1;i < 8 && stop == false;i++)
+	for(int i = x+1;i < 8 && !stop;i++)
 		ADD_MOVE(y,i);
 	
 	stop = false;
 
-	for(int i = x-1;i >= 0 && stop == false;i--)
+	for(int i = x-1;i >= 0 && !stop;i--)
 		ADD_MOVE(y,i);
 	
 	stop = false;
 
-	for(int i = y+1;i < 8 && stop == false;i++)
+	for(int i = y+1;i < 8 && !stop;i++)
 		ADD_MOVE(i,x);
 
 	stop = false;
 
-	for(int i = y-1;i >= 0 && stop == false;i--)
+	for(int i = y-1;i >= 0 && !stop;i--)
 		ADD_MOVE(i,x);
 }

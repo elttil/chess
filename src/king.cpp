@@ -2,7 +2,7 @@
 
 #define ADD_MOVE(y,x) (\
 (this->can_move(y, x, board))&&\
-(moves[y][x] = true)\
+((*moves)[y][x] = true)\
 )
 
 King::King(bool isWhite)
@@ -15,7 +15,7 @@ King::King(bool isWhite)
 	this->isWhite = isWhite;
 }
 
-void King::get_legal_moves(bool moves[8][8], Piece* board[8][8], unsigned short x, unsigned short y)
+void King::get_legal_moves(std::vector<std::vector<bool>>* moves, std::vector<std::vector<Piece*>> board, unsigned short x, unsigned short y)
 {
 	ADD_MOVE(y+1, x+1);
 	ADD_MOVE(y+1, x-1);
@@ -46,7 +46,7 @@ void King::get_legal_moves(bool moves[8][8], Piece* board[8][8], unsigned short 
 	if(((Piece*)board[y][7])->has_moved())
 		goto next;
 	
-	moves[y][x+2] = true;
+	(*moves)[y][x+2] = true;
 
 next:
 
@@ -63,5 +63,5 @@ next:
 	if(((Piece*)board[y][0])->has_moved())
 		return;
 	
-	moves[y][x-2] = true;
+	(*moves)[y][x-2] = true;
 }

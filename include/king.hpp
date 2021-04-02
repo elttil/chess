@@ -1,8 +1,8 @@
 #include "piece.hpp"
 
-class King : protected Piece
+class King : public Piece
 {
 public:
 	King(bool);
-	void get_legal_moves(bool[8][8], Piece*[8][8], unsigned short, unsigned short);
+	void get_legal_moves(std::vector<std::vector<bool>>*, std::vector<std::vector<Piece*>>, unsigned short, unsigned short);
 };

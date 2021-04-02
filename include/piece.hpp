@@ -13,9 +13,9 @@ public:
 	bool is_white();
 	bool has_moved();
 	void set_has_moved(bool);
-	bool can_move(int, int, Piece*[8][8], bool* = nullptr);
-	virtual void get_legal_moves(bool[8][8], Piece*[8][8], unsigned short, unsigned short) = 0;
-protected:
+	bool can_move(int, int, std::vector<std::vector<Piece*>>, bool* = nullptr);
+	virtual void get_legal_moves(std::vector<std::vector<bool>>*, std::vector<std::vector<Piece*>>, unsigned short, unsigned short) = 0;
+//protected:
 	char type;
 	bool isWhite;
 	bool hasMoved;

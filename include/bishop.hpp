@@ -2,10 +2,10 @@
 #define BISHOP_HPP
 #include "piece.hpp"
 
-class Bishop : protected Piece
+class Bishop : public Piece
 {
 public:
 	Bishop(bool);
-	void get_legal_moves(bool[8][8], Piece*[8][8], unsigned short, unsigned short);
+	void get_legal_moves(std::vector<std::vector<bool>>*, std::vector<std::vector<Piece*>>, unsigned short, unsigned short);
 };
 #endif

@@ -41,7 +41,7 @@ bool Piece::is_white() { return isWhite; }
 
 char Piece::get_type() { return type; }
 
-bool Piece::can_move(int y, int x, Piece* board[8][8], bool* stop)
+bool Piece::can_move(int y, int x, std::vector<std::vector<Piece*>> board, bool* stop)
 { 
 	if(x < 0 || x >= 8)
 		return false;
