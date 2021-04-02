@@ -12,8 +12,7 @@ Game::Game(bool arg) :
 	board(8,std::vector<Piece*>(8, nullptr)),
 	moves(8,std::vector<bool>(8, false)),
 	window(sf::VideoMode(495, 495), "My window"),
-	whites_turn ( true ),
-	sock(0)
+	whites_turn ( true )
 {
 	backTexture.loadFromFile("back.png");
 	background.setTexture(backTexture);
@@ -203,46 +202,7 @@ out3:
 		if(!selectedPiece->has_moved())
 			if(dst.y == 3 || dst.y == 4)
 				((Pawn*)selectedPiece)->set_double_move(true);
-
-/*					if(board[dst.y][dst.x] == nullptr)
-		{
-			if(selectedPiece->is_white())
-			{
-				delete (Piece*)board[dst.y+1][dst.x];
-				board[dst.y+1][dst.x] = nullptr;
-			}
-			else
-			{
-				delete (Piece*)board[dst.y-1][dst.x];
-				board[dst.y-1][dst.x] = nullptr;
-			}
-		}*/
 	}
-
-	///////
-	/*
-	char move[4];
-
-	for(unsigned short i = 0;i < 8;i++)
-		for(unsigned short j = 0;j < 8;j++)
-			if(board[i][j] == selectedPiece)
-			{
-				//src
-				move[0] = j + '0';
-				move[1] = i + '0';
-				goto out4;
-			}
-out4:
-
-	//dst
-	move[2] = dst.x + '0';
-	move[3] = dst.y + '0';
-
-	send(sock, move, sizeof(move), 0);
-	std::cout << "Data sent" << std::endl;
-	*/
-	////////
-
 
 	for(size_t i = 0;i < 8;i++)
 		for(size_t j = 0;j < 8;j++)
@@ -417,7 +377,7 @@ void Game::update_pieces()
 			if(board[i][j] == nullptr)
 				continue;
 			
-			((Piece*)board[i][j])->setPosition(j*62,i*62);
+			((Piece*)board[i][j])->set_position(j*62,i*62);
 		}
 }
 

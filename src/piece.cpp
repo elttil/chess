@@ -27,7 +27,7 @@ void Piece::draw(sf::RenderWindow& window)
 	window.draw(mainObj);
 }
 
-void Piece::setPosition(float x,float y)
+void Piece::set_position(int x,int y)
 {
 	mainObj.setPosition(sf::Vector2f(x,y));
 }

@@ -29,7 +29,6 @@ private:
 	Piece *selectedPiece;
 	bool whites_turn;
 	int winner = 0;
-	int sock;
 	
 	//Two kings 0 = player, 1 = foo
 	sf::Vector2i king_position[2];
